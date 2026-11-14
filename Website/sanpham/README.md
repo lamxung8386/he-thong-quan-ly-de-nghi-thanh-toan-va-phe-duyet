@@ -75,14 +75,4 @@ Tạo một đề nghị bằng web, chạy câu `SELECT` lần nữa để th�
 
 Các bài JUnit nằm tại `src/test/java/vn/fin01/` với các tình huống nghiệp vụ và avatar. **Bộ test cần được chạy bằng `mvn clean test` trên máy của bạn; không tuyên bố PASS khi chưa chạy.**
 
-## Cấu trúc cần biết khi thầy hỏi
 
-- `src/main/java/vn/fin01/web/WebController.java`: nhận request, kiểm tra đường dẫn, điều hướng và gắn dữ liệu vào view.
-- `src/main/java/vn/fin01/core/FinanceService.java`: quy tắc nghiệp vụ, phân quyền và truy vấn thông qua JdbcTemplate.
-- `src/main/java/vn/fin01/config/SecurityConfig.java`: đăng nhập và mật khẩu BCrypt.
-- `src/main/resources/templates`: các trang Thymeleaf.
-- `src/main/resources/static/css/site.css`, `static/js/site.js`: giao diện và tương tác trình duyệt.
-- `src/main/resources/schema.sql`: các bảng, khóa ngoại, cột và ràng buộc.
-- `src/main/java/vn/fin01/config/DemoData.java`: các tài khoản mẫu được thêm chỉ khi chưa có.
-
-**Không sử dụng `generate_templates.py` cũ để dựng lại giao diện** vì nó sẽ ghi đè thiết kế mới. Không cần chỉnh báo cáo Word ở giai đoạn này.
