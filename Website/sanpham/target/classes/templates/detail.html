@@ -1,0 +1,123 @@
+<!doctype html><html lang="vi" xmlns:th="http://www.thymeleaf.org"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#00a862"><title>Chi tiết đề nghị | Hệ thống quản lý đề nghị thanh toán và phê duyệt</title><link rel="stylesheet" th:href="@{/css/site.css}"><script defer th:src="@{/js/site.js}"></script></head>
+<body class="app-body"><div class="site-shell"><header class="site-topbar">
+<a class="brand-link" th:href="@{/}"><span class="grab-wordmark">Grab</span><span class="brand-divider"></span><span class="brand-caption">QUẢN LÝ ĐỀ NGHỊ</span></a>
+<button class="mobile-menu-btn" type="button" aria-label="Mở điều hướng" aria-expanded="false" data-nav-toggle>☰</button><nav class="site-nav" id="primary-navigation"><a class="menu-link" th:href="@{/}">Trang chủ</a><a class="menu-link selected" th:href="@{/expenses}">Đề nghị</a><a class="menu-link" th:href="@{/approvals}" th:if="${me.role == 'APPROVER' or me.role == 'ADMIN'}">Phê duyệt</a><a class="menu-link" th:href="@{/payments}" th:if="${me.role == 'ACCOUNTANT' or me.role == 'ADMIN'}">Thanh toán</a><a class="menu-link" th:href="@{/reconciliation}" th:if="${me.role == 'ACCOUNTANT' or me.role == 'ADMIN'}">Đối soát</a><a class="menu-link" th:href="@{/reports}" th:if="${me.role != 'USER'}">Báo cáo</a><a class="menu-link" th:href="@{/admin}" th:if="${me.role == 'ADMIN'}">Quản trị</a><a class="menu-link" th:href="@{/audit}" th:if="${me.role == 'AUDITOR' or me.role == 'ADMIN'}">Nhật ký</a></nav>
+<form class="top-search" method="get" th:action="@{/expenses}"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.8" cy="10.8" r="6.5"/><path d="m16 16 5 5"/></svg><input name="q" placeholder="Tìm đề nghị, mã hồ sơ..." aria-label="Tìm đề nghị" autocomplete="off"></form>
+<a class="bell-link" th:href="@{/notifications}" title="Thông báo">♧<span class="bell-count" th:if="${unread!=null and unread>0}" th:text="${unread}">2</span></a>
+<details class="profile-drop"><summary><span class="user-photo"><img th:if="${me!=null and me.avatar_file!=null}" th:src="@{/avatars/{id}(id=${me.id})}" alt="Ảnh đại diện"><span th:unless="${me!=null and me.avatar_file!=null}" th:text="${#strings.substring(me.full_name,0,1)}">N</span></span><span class="profile-title"><strong th:text="${me.full_name}">Người dùng</strong><small th:text="${me.role=='USER'?'Nhân viên':me.role=='APPROVER'?'Người phê duyệt':me.role=='ACCOUNTANT'?'Kế toán':me.role=='ADMIN'?'Quản trị viên':'Kiểm toán viên'}">Nhân viên</small></span><span class="caret">⌄</span></summary><div class="profile-menu"><a th:href="@{/profile}">Hồ sơ và ảnh đại diện</a><a th:href="@{/notifications}">Thông báo</a><form th:action="@{/logout}" method="post"><button type="submit">Đăng xuất</button></form></div></details>
+</header>
+<main class="site-main detail-screen"><div class="page-wrap"><div class="page-title-row" th:unless="${hidePageTitle}"><div><p class="page-overline">KHÔNG GIAN LÀM VIỆC</p><h1>Chi tiết đề nghị</h1><p>Xem hồ sơ, chứng từ và toàn bộ quá trình xử lý.</p></div></div><div th:if="${success}" class="alert good" th:text="${success}"></div><div class="detail-jumps"><a href="#thong-tin">Thông tin chung</a><a href="#chi-tra">Chi trả</a><a href="#doi-soat">Đối soát</a><a href="#lich-su">Lịch sử</a></div><div class="headline"><div><span class="eyebrow" th:text="${e.code}">DN-000</span><h2 th:text="${e.purpose}">Mục đích</h2><p>Người lập: <b th:text="${e.creator_name}"></b> · Loại: <b th:text="${e.category_name}"></b></p></div><span class="status large" th:text="${statusNames[e.status]}">Bản nháp</span></div><div class="cards-2" id="thong-tin"><section class="card"><h3>Thông tin hồ sơ</h3><dl class="pairs"><dt>Số tiền</dt><dd th:text="${#numbers.formatDecimal(e.amount,1,'POINT',0,'COMMA')+' đồng'}"></dd><dt>Người nhận</dt><dd th:text="${e.payee}"></dd><dt>Nhà cung cấp</dt><dd th:text="${e.supplier}"></dd><dt>Số hóa đơn</dt><dd th:text="${e.invoice_no}"></dd><dt>Ngày hóa đơn</dt><dd th:text="${e.invoice_date}"></dd><dt>Hạn mức người lập</dt><dd th:text="${#numbers.formatDecimal(e.creator_limit,1,'POINT',0,'COMMA')}+' đồng'"></dd></dl></section><section class="card"><h3>Chứng từ kèm theo</h3><ul class="filelist"><li th:each="d:${documents}"><a th:href="@{/documents/{id}(id=${d.id})}" th:text="${d.original_name}">file.pdf</a> <small th:text="${d.size_bytes}+' bytes'"></small></li><li class="hint" th:if="${#lists.isEmpty(documents)}">Chưa có chứng từ. Không thể gửi duyệt khi thiếu tệp.</li></ul><form class="stack" enctype="multipart/form-data" method="post" th:action="@{/expenses/{id}/upload(id=${e.id})}" th:if="${me.id==e.created_by and (e.status=='DRAFT' or e.status=='REJECTED')}"><input accept=".pdf,.png,.jpg,.jpeg" name="file" required="" type="file"/><button class="btn outline">Tải lên chứng từ</button></form></section></div><section class="card" th:if="${me.id==e.created_by and (e.status=='DRAFT' or e.status=='REJECTED')}"><div class="card-head"><h3>Chỉnh sửa hồ sơ / Gửi duyệt</h3><span class="hint">Chỉ được sửa khi nháp hoặc bị từ chối</span></div><form class="form-grid" method="post" th:action="@{/expenses/{id}/edit(id=${e.id})}"><label class="wide">Mục đích chi<textarea maxlength="1000" name="purpose" required="" rows="2" th:text="${e.purpose}"></textarea></label><label>Loại chi<select name="categoryId"><option th:each="c:${categories}" th:selected="${c.id==e.category_id}" th:text="${c.name}" th:value="${c.id}"></option></select></label><label>Số tiền<input min="1" name="amount" required="" step="0.01" th:value="${e.amount}" type="number"/></label><label>Người nhận<input name="payee" required="" th:value="${e.payee}"/></label><div class="actions wide"><button class="btn outline">Lưu thay đổi</button></div></form><form method="post" onsubmit="return confirm('Xác nhận gửi duyệt? Sau khi gửi bạn không thể sửa hồ sơ.');" th:action="@{/expenses/{id}/submit(id=${e.id})}"><button class="btn primary">Gửi đề nghị phê duyệt →</button></form></section><section class="card" th:if="${me.role=='APPROVER' and e.status=='SUBMITTED'}"><h3>Quyết định phê duyệt</h3><form class="stack" method="post" th:action="@{/expenses/{id}/decision(id=${e.id})}"><label>Ý kiến / Lý do từ chối<textarea maxlength="1000" name="reason" placeholder="Khi từ chối bắt buộc nhập lý do"></textarea></label><div class="actions"><button class="btn primary" name="decision" value="APPROVED">Phê duyệt</button><button class="btn danger" name="decision" value="REJECTED">Từ chối</button></div></form></section>
+<section class="card" id="chi-tra" th:if="${me.role=='ACCOUNTANT'}">
+<div class="card-head"><h3>Phiếu chi trả nội bộ (mô phỏng)</h3><span class="hint">Không phát sinh giao dịch ngân hàng thật</span></div>
+<div class="alert" role="alert" style="background:#fee2e2;color:#991b1b;border:1px solid #fca5a5;font-weight:600" th:if="${paymentError}" th:text="${paymentError}"></div>
+<p class="hint">Hệ thống kiểm tra người nhận và số tiền tại thời điểm ghi nhận. Tên phải đúng hồ sơ đã duyệt, số tiền không được vượt số tiền còn phải chi.</p>
+<div class="form-grid" style="gap:12px;margin:16px 0">
+<div style="background:#f0f5ff;border:1px solid #cad8ef;border-radius:10px;padding:14px">
+<div class="hint">Số tiền được duyệt</div><strong th:text="${#numbers.formatDecimal(e.amount,1,'POINT',0,'COMMA')+' đồng'}">0</strong>
+</div>
+<div style="background:#eefbf3;border:1px solid #b9e5c7;border-radius:10px;padding:14px">
+<div class="hint">Đã ghi nhận thành công (chưa hủy)</div><strong th:text="${#numbers.formatDecimal(paidTotal,1,'POINT',0,'COMMA')+' đồng'}">0</strong>
+</div>
+<div style="background:#fff8ed;border:1px solid #f3d59e;border-radius:10px;padding:14px">
+<div class="hint">Số tiền còn phải chi</div><strong th:text="${#numbers.formatDecimal(remaining,1,'POINT',0,'COMMA')+' đồng'}">0</strong>
+</div>
+</div>
+<p style="color:#92400e;font-weight:600" th:if="${e.status=='PARTIALLY_PAID'}">Đã chi một phần. Kế toán có thể lập thêm phiếu chi cho số tiền còn lại. Chưa được đối soát hoàn tất.</p>
+<form class="stack" method="post" th:action="@{/expenses/{id}/pay(id=${e.id})}" th:if="${e.status=='APPROVED' or e.status=='PARTIALLY_PAID' or e.status=='PAYMENT_FAILED'}">
+<div class="form-grid">
+<label>Số tiền chi lần này (đồng)
+        <input id="pay-amount" min="0.01" name="paidAmount" placeholder="Ví dụ: 9000000" step="0.01" th:value="${formPayAmount}" type="number"/></label>
+<label>Tên người nhận (đúng tên đã duyệt)
+        <input maxlength="200" name="paidPayee" th:placeholder="${e.payee}" th:value="${formPayPayee}"/></label>
+<p class="hint wide">Người nhận cần nhập: <strong th:text="${e.payee}"></strong>. Nếu nhập sai, hệ thống sẽ báo lỗi và yêu cầu nhập lại.</p>
+<label>Phương thức thanh toán
+        <select id="pay-method" name="paymentMethod">
+<option th:selected="${formMethod == null or formMethod == 'TRANSFER'}" value="TRANSFER">Chuyển khoản ngân hàng (ảo)</option>
+<option th:selected="${formMethod == 'CASH'}" value="CASH">Tiền mặt</option>
+</select>
+</label>
+<label>Mã chứng từ tham chiếu (không bắt buộc)<input maxlength="100" name="evidenceReference" placeholder="Ví dụ: PC-001"/></label>
+<div class="wide" id="pay-bank-block" style="background:#f3f7ff;border:1px solid #d5e1f6;padding:16px;border-radius:10px">
+<p style="font-weight:700;margin:0 0 8px">Thông tin tài khoản ngân hàng ảo</p>
+<p class="hint">Chỉ dùng dữ liệu giả lập. Không nhập số tài khoản ngân hàng thật.</p>
+<div class="form-grid">
+<label>Tên ngân hàng ảo<input maxlength="100" name="bankName" placeholder="Ví dụ: Ngân hàng DEMO" th:value="${formBankName}"/></label>
+<label>Số tài khoản ảo<input inputmode="numeric" maxlength="20" name="bankAccount" placeholder="Ví dụ: 000000123456" th:value="${formBankAccount}"/></label>
+</div>
+</div>
+</div>
+<label>Ghi chú<textarea maxlength="1000" name="note" placeholder="Nội dung phiếu chi (mô phỏng)"></textarea></label>
+<div class="actions"><button class="btn primary" name="result" value="SUCCESS">Ghi nhận chi trả (mô phỏng)</button><button class="btn danger" formnovalidate="" name="result" value="FAILED">Ghi nhận thất bại</button></div>
+</form>
+<p style="color:#166534;font-weight:700" th:if="${e.status=='PAID'}">Đã ghi nhận đủ số tiền. Kiểm tra bảng đối soát bên dưới để hoàn tất.</p>
+</section>
+<section class="card" th:if="${me.role=='ACCOUNTANT' and (e.status=='PAID' or e.status=='NEEDS_REVIEW')}">
+<h3>Đối soát giao dịch</h3>
+<p class="hint">So sánh tổng tất cả giao dịch thành công chưa hủy với số tiền được duyệt. Chỉ hoàn tất khi tổng tiền và tên người nhận đều khớp.</p>
+<table><thead><tr><th>Tiêu chí</th><th>Theo hồ sơ đã duyệt</th><th>Kế toán ghi nhận</th><th>Kết quả</th></tr></thead><tbody>
+<tr><td>Số tiền</td><td th:text="${#numbers.formatDecimal(e.amount,1,'POINT',0,'COMMA')+' đồng'}"></td><td th:text="${#numbers.formatDecimal(paidTotal,1,'POINT',0,'COMMA')+' đồng'}"></td><td th:text="${!hasPaymentData ? 'THIẾU DỮ LIỆU' : (amountMatches ? 'KHỚP' : 'CHƯA ĐỦ / SAI')} "></td></tr>
+<tr><td>Người nhận</td><td th:text="${e.payee}"></td><td th:text="${payeeMatches ? e.payee : 'Có ít nhất một giao dịch thiếu hoặc sai tên'}"></td><td th:text="${payeeMatches ? 'KHỚP' : 'KHÔNG KHỚP'}"></td></tr>
+<tr><td>Số tiền còn thiếu</td><td>—</td><td th:text="${#numbers.formatDecimal(remaining,1,'POINT',0,'COMMA')+' đồng'}"></td><td th:text="${remaining.signum()==0 ? 'ĐÃ ĐỦ' : 'CẦN BỔ SUNG'}"></td></tr>
+</tbody></table>
+<p style="color:#b91c1c;font-weight:600" th:if="${!reconMatches}">Chưa thể hoàn tất: dữ liệu chưa đủ hoặc đang có chênh lệch. Hãy kiểm tra hoặc hủy bản ghi mô phỏng sai rồi nhập lại.</p>
+<p style="color:#166534;font-weight:600" th:if="${reconMatches}">Số liệu và người nhận đã khớp trong dữ liệu mô phỏng.</p>
+<form class="stack" method="post" th:action="@{/expenses/{id}/reconcile(id=${e.id})}">
+<label>Ghi chú / Lý do chênh lệch<textarea maxlength="1000" name="note"></textarea></label>
+<div class="actions"><button class="btn primary" name="result" th:disabled="${!reconMatches}" value="MATCHED">Khớp số liệu, hoàn tất</button><button class="btn danger" name="result" value="MISMATCHED">Có chênh lệch</button></div>
+</form>
+</section>
+<section class="card" th:if="${latestSuccess != null and !hasPaymentData and me.role=='ACCOUNTANT' and me.id==latestSuccess.payer_id and (e.status=='PAID' or e.status=='NEEDS_REVIEW')}">
+<h3>Bổ sung dữ liệu còn thiếu của giao dịch cũ</h3><p class="hint">Chỉ dành cho giao dịch cũ chưa lưu số tiền. Nếu bản ghi có số tiền hoặc tên sai, dùng “Hủy bản ghi mô phỏng sai” bên dưới.</p>
+<form class="stack" method="post" th:action="@{/expenses/{id}/payment/legacy(id=${e.id})}">
+<div class="form-grid">
+<label>Số tiền <input min="0.01" name="paidAmount" required="" step="0.01" type="number"/></label>
+<label>Tên người nhận <input name="paidPayee" required="" th:placeholder="${e.payee}"/></label>
+<label>Phương thức thanh toán<select id="legacy-method" name="paymentMethod"><option value="TRANSFER">Chuyển khoản ngân hàng ảo</option><option value="CASH">Tiền mặt</option></select></label>
+<label>Mã tham chiếu <input maxlength="100" name="evidenceReference"/></label>
+<div class="wide" id="legacy-bank-block" style="background:#f3f7ff;padding:12px;border-radius:8px">
+<div class="form-grid"><label>Tên ngân hàng ảo<input name="bankName" placeholder="Ngân hàng DEMO"/></label><label>Số tài khoản ảo<input inputmode="numeric" name="bankAccount" placeholder="000000123456"/></label></div>
+</div>
+</div><button class="btn outline">Bổ sung dữ liệu cũ</button>
+</form>
+</section>
+<section class="card" th:if="${!#lists.isEmpty(payments)}">
+<h3>Lịch sử phiếu chi trả (mô phỏng)</h3><p class="hint">Chuyển khoản chỉ ghi nhận vào hệ thống, không chuyển tiền thật. Các phiếu bị hủy không được tính vào tổng đã chi.</p>
+<div style="overflow-x:auto"><table><thead><tr><th>Mã giao dịch</th><th>Kế toán</th><th>Số tiền</th><th>Người nhận</th><th>Phương thức</th><th>Tài khoản ngân hàng ảo</th><th>Kết quả</th><th>Ngày ghi nhận</th></tr></thead><tbody>
+<tr th:each="p:${payments}">
+<td th:text="${p.reference_code}"></td><td th:text="${p.full_name}"></td>
+<td th:text="${p.paid_amount!=null ? #numbers.formatDecimal(p.paid_amount,1,'POINT',0,'COMMA')+' đồng' : 'Không có số tiền'}"></td>
+<td th:text="${p.paid_payee!=null ? p.paid_payee : '—'}"></td>
+<td th:text="${p.payment_method=='TRANSFER' ? 'Chuyển khoản ảo' : (p.payment_method=='CASH' ? 'Tiền mặt' : '—')}"></td>
+<td><span th:if="${p.payment_method=='TRANSFER'}"><span th:text="${p.bank_name != null ? p.bank_name : 'Chưa có tên ngân hàng'}"></span> · <span th:text="${p.bank_account != null ? p.bank_account : 'Chưa lưu STK ảo'}"></span></span><span th:if="${p.payment_method!='TRANSFER'}">Không áp dụng</span></td>
+<td th:text="${p.voided ? 'ĐÃ HỦY: '+p.void_reason : (p.status=='SUCCESS' ? 'Ghi nhận thành công (mô phỏng)' : 'Thất bại')}"></td>
+<td th:text="${p.paid_at}"></td>
+</tr>
+</tbody></table></div>
+</section>
+<section class="card" th:if="${latestSuccess != null and me.role=='ACCOUNTANT' and me.id==latestSuccess.payer_id and (e.status=='PAID' or e.status=='PARTIALLY_PAID' or e.status=='NEEDS_REVIEW')}">
+<h3>Sửa giao dịch mô phỏng đã ghi nhận sai</h3>
+<p class="hint">Ví dụ giao dịch cũ ghi 9 triệu cho người nhận “L” trong khi hồ sơ ghi “Lâm”: hệ thống không cho sửa lịch sử trực tiếp. Kế toán hủy bản ghi sai có lý do rồi tạo phiếu chi mới. Chỉ hủy được giao dịch thành công mới nhất chưa bị hủy.</p>
+<p>Mã cần hủy: <strong th:text="${latestSuccess.reference_code}"></strong> · <strong th:text="${latestSuccess.paid_amount}"></strong> VND · <span th:text="${latestSuccess.paid_payee}"></span></p>
+<form method="post" onsubmit="return confirm('Xác nhận hủy bản ghi mô phỏng sai? Hành động sẽ được lưu nhật ký.');" th:action="@{/expenses/{id}/payment/{pid}/void(id=${e.id},pid=${latestSuccess.id})}">
+<label>Lý do hủy (bắt buộc)<textarea maxlength="500" name="reason" placeholder="Ví dụ: Nhập nhầm người nhận hoặc số tiền" required=""></textarea></label>
+<button class="btn danger" style="margin-top:12px">Hủy bản ghi mô phỏng sai</button>
+</form>
+</section>
+<script>
+(function(){
+  function configure(methodId,blockId){
+    const method=document.getElementById(methodId),block=document.getElementById(blockId);
+    if(!method || !block)return;
+    function update(){
+      const transfer=method.value==='TRANSFER';
+      block.style.display=transfer?'block':'none';
+      block.querySelectorAll('input').forEach(function(input){input.required=transfer;input.disabled=!transfer;});
+    }
+    method.addEventListener('change',update);update();
+  }
+  configure('pay-method','pay-bank-block');configure('legacy-method','legacy-bank-block');
+})();
+</script>
+<div class="cards-2"><section class="card"><h3>Lịch sử phê duyệt</h3><ul class="timeline"><li th:each="x:${approvals}"><b th:text="${actionNames[x.decision]}"></b> · <span th:text="${x.full_name}"></span><small th:text="${x.reason}"></small></li><li class="hint" th:if="${#lists.isEmpty(approvals)}">Chưa được duyệt.</li></ul><h3>Giao dịch chi trả</h3><ul class="timeline"><li th:each="x:${payments}"><b th:text="${transactionNames[x.status]}"></b> · <span th:text="${x.reference_code}"></span><small th:text="${x.note}"></small></li></ul><h3>Đối soát</h3><ul class="timeline"><li th:each="x:${recons}"><b th:text="${transactionNames[x.result]}"></b> · <span th:text="${x.full_name}"></span><small th:text="${x.note}"></small></li></ul></section><section class="card"><h3>Nhật ký thao tác</h3><ul class="timeline"><li th:each="x:${history}"><b th:text="${actionNames[x.action] ?: x.action}"></b> · <span th:text="${x.actor_name}"></span><small th:text="${x.detail}"></small><small th:text="${x.created_at}"></small></li></ul></section></div><p><a th:href="@{/expenses}">← Quay lại danh sách</a></p></div></main>
+<footer class="site-footer">Hệ thống quản lý đề nghị thanh toán và phê duyệt <span>•</span> Dữ liệu lưu tại PostgreSQL <span>•</span> Quy trình quản lý nội bộ</footer>
+</div></body></html>

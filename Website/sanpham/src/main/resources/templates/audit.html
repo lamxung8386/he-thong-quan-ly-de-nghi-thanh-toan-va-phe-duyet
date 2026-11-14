@@ -1,0 +1,43 @@
+<!doctype html><html lang="vi" xmlns:th="http://www.thymeleaf.org"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#00a862"><title>Nhật ký thao tác | Hệ thống quản lý đề nghị thanh toán và phê duyệt</title><link rel="stylesheet" th:href="@{/css/site.css}"><script defer th:src="@{/js/site.js}"></script></head>
+<body class="app-body"><div class="site-shell"><header class="site-topbar">
+<a class="brand-link" th:href="@{/}"><span class="grab-wordmark">Grab</span><span class="brand-divider"></span><span class="brand-caption">QUẢN LÝ ĐỀ NGHỊ</span></a>
+<button class="mobile-menu-btn" type="button" aria-label="Mở điều hướng" aria-expanded="false" data-nav-toggle>☰</button><nav class="site-nav" id="primary-navigation"><a class="menu-link" th:href="@{/}">Trang chủ</a><a class="menu-link" th:href="@{/expenses}">Đề nghị</a><a class="menu-link" th:href="@{/approvals}" th:if="${me.role == 'APPROVER' or me.role == 'ADMIN'}">Phê duyệt</a><a class="menu-link" th:href="@{/payments}" th:if="${me.role == 'ACCOUNTANT' or me.role == 'ADMIN'}">Thanh toán</a><a class="menu-link" th:href="@{/reconciliation}" th:if="${me.role == 'ACCOUNTANT' or me.role == 'ADMIN'}">Đối soát</a><a class="menu-link" th:href="@{/reports}" th:if="${me.role != 'USER'}">Báo cáo</a><a class="menu-link" th:href="@{/admin}" th:if="${me.role == 'ADMIN'}">Quản trị</a><a class="menu-link selected" th:href="@{/audit}" th:if="${me.role == 'AUDITOR' or me.role == 'ADMIN'}">Nhật ký</a></nav>
+<form class="top-search" method="get" th:action="@{/expenses}"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.8" cy="10.8" r="6.5"/><path d="m16 16 5 5"/></svg><input name="q" placeholder="Tìm đề nghị, mã hồ sơ..." aria-label="Tìm đề nghị" autocomplete="off"></form>
+<a class="bell-link" th:href="@{/notifications}" title="Thông báo">♧<span class="bell-count" th:if="${unread!=null and unread>0}" th:text="${unread}">2</span></a>
+<details class="profile-drop"><summary><span class="user-photo"><img th:if="${me!=null and me.avatar_file!=null}" th:src="@{/avatars/{id}(id=${me.id})}" alt="Ảnh đại diện"><span th:unless="${me!=null and me.avatar_file!=null}" th:text="${#strings.substring(me.full_name,0,1)}">N</span></span><span class="profile-title"><strong th:text="${me.full_name}">Người dùng</strong><small th:text="${me.role=='USER'?'Nhân viên':me.role=='APPROVER'?'Người phê duyệt':me.role=='ACCOUNTANT'?'Kế toán':me.role=='ADMIN'?'Quản trị viên':'Kiểm toán viên'}">Nhân viên</small></span><span class="caret">⌄</span></summary><div class="profile-menu"><a th:href="@{/profile}">Hồ sơ và ảnh đại diện</a><a th:href="@{/notifications}">Thông báo</a><form th:action="@{/logout}" method="post"><button type="submit">Đăng xuất</button></form></div></details>
+</header>
+<main class="site-main">
+<div class="page-wrap">
+  <div class="page-title-row"><div><p class="page-overline">KIỂM SOÁT HỆ THỐNG</p><h1>Nhật ký thao tác</h1><p>Theo dõi các thay đổi được ghi nhận trong cơ sở dữ liệu.</p></div></div>
+  <section class="card" aria-labelledby="audit-title">
+    <div class="audit-head">
+      <div><h3 id="audit-title">Lịch sử thao tác</h3><p class="hint">Chỉ xem, không chỉnh sửa hoặc xóa nhật ký tại trang này.</p></div>
+      <span class="audit-total" th:text="${'Tổng cộng ' + totalItems + ' bản ghi'}">Tổng cộng 0 bản ghi</span>
+    </div>
+    <div class="audit-scroll" role="region" tabindex="0" aria-label="Bảng nhật ký có thanh cuộn">
+      <table class="audit-table">
+        <thead><tr><th>Thời điểm</th><th>Tài khoản</th><th>Đối tượng</th><th>Thao tác</th><th>Chi tiết</th></tr></thead>
+        <tbody>
+          <tr th:each="x:${items}">
+            <td class="audit-time" th:text="${#strings.substring(x.created_at.toString(), 0, 19)}">2026-10-28 01:32:53</td>
+            <td class="cell-strong" th:text="${x.username}">admin</td>
+            <td th:text="${(entityNames[x.entity_type] ?: x.entity_type) + ' số ' + x.entity_id}">Người dùng số 1</td>
+            <td th:text="${actionNames[x.action] ?: x.action}">Cập nhật</td>
+            <td class="audit-detail" th:text="${x.detail}">Chi tiết</td>
+          </tr>
+          <tr th:if="${#lists.isEmpty(items)}"><td colspan="5" class="empty-state">Chưa có nhật ký nào được ghi nhận.</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <nav class="audit-pagination" aria-label="Phân trang nhật ký">
+      <p th:text="${totalItems == 0 ? 'Chưa có bản ghi' : 'Hiển thị ' + startItem + '–' + endItem + ' trên ' + totalItems + ' bản ghi'}">Hiển thị 1–25</p>
+      <div class="audit-pager">
+        <a th:if="${page > 0}" th:href="@{/audit(page=${page - 1})}" class="btn outline small">← Trang trước</a>
+        <span class="audit-page-number" th:text="${'Trang ' + (page + 1) + ' / ' + totalPages}">Trang 1 / 1</span>
+        <a th:if="${page + 1 < totalPages}" th:href="@{/audit(page=${page + 1})}" class="btn outline small">Trang sau →</a>
+      </div>
+    </nav>
+  </section>
+</div></main>
+<footer class="site-footer">Hệ thống quản lý đề nghị thanh toán và phê duyệt <span>•</span> Dữ liệu lưu tại PostgreSQL <span>•</span> Quy trình quản lý nội bộ</footer>
+</div></body></html>

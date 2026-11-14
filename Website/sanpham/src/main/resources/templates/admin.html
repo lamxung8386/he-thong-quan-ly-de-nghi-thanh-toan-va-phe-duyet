@@ -1,0 +1,63 @@
+<!doctype html><html lang="vi" xmlns:th="http://www.thymeleaf.org"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#00a862"><title>Quản trị hệ thống | Hệ thống quản lý đề nghị thanh toán và phê duyệt</title><link rel="stylesheet" th:href="@{/css/site.css}"><script defer th:src="@{/js/site.js}"></script></head>
+<body class="app-body"><div class="site-shell"><header class="site-topbar">
+<a class="brand-link" th:href="@{/}"><span class="grab-wordmark">Grab</span><span class="brand-divider"></span><span class="brand-caption">QUẢN LÝ ĐỀ NGHỊ</span></a>
+<button class="mobile-menu-btn" type="button" aria-label="Mở điều hướng" aria-expanded="false" data-nav-toggle>☰</button><nav class="site-nav" id="primary-navigation"><a class="menu-link" th:href="@{/}">Trang chủ</a><a class="menu-link" th:href="@{/expenses}">Đề nghị</a><a class="menu-link" th:href="@{/approvals}" th:if="${me.role == 'APPROVER' or me.role == 'ADMIN'}">Phê duyệt</a><a class="menu-link" th:href="@{/payments}" th:if="${me.role == 'ACCOUNTANT' or me.role == 'ADMIN'}">Thanh toán</a><a class="menu-link" th:href="@{/reconciliation}" th:if="${me.role == 'ACCOUNTANT' or me.role == 'ADMIN'}">Đối soát</a><a class="menu-link" th:href="@{/reports}" th:if="${me.role != 'USER'}">Báo cáo</a><a class="menu-link selected" th:href="@{/admin}" th:if="${me.role == 'ADMIN'}">Quản trị</a><a class="menu-link" th:href="@{/audit}" th:if="${me.role == 'AUDITOR' or me.role == 'ADMIN'}">Nhật ký</a></nav>
+<form class="top-search" method="get" th:action="@{/expenses}"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.8" cy="10.8" r="6.5"/><path d="m16 16 5 5"/></svg><input name="q" placeholder="Tìm đề nghị, mã hồ sơ..." aria-label="Tìm đề nghị" autocomplete="off"></form>
+<a class="bell-link" th:href="@{/notifications}" title="Thông báo">♧<span class="bell-count" th:if="${unread!=null and unread>0}" th:text="${unread}">2</span></a>
+<details class="profile-drop"><summary><span class="user-photo"><img th:if="${me!=null and me.avatar_file!=null}" th:src="@{/avatars/{id}(id=${me.id})}" alt="Ảnh đại diện"><span th:unless="${me!=null and me.avatar_file!=null}" th:text="${#strings.substring(me.full_name,0,1)}">N</span></span><span class="profile-title"><strong th:text="${me.full_name}">Người dùng</strong><small th:text="${me.role=='USER'?'Nhân viên':me.role=='APPROVER'?'Người phê duyệt':me.role=='ACCOUNTANT'?'Kế toán':me.role=='ADMIN'?'Quản trị viên':'Kiểm toán viên'}">Nhân viên</small></span><span class="caret">⌄</span></summary><div class="profile-menu"><a th:href="@{/profile}">Hồ sơ và ảnh đại diện</a><a th:href="@{/notifications}">Thông báo</a><form th:action="@{/logout}" method="post"><button type="submit">Đăng xuất</button></form></div></details>
+</header>
+<main class="site-main">
+<div class="page-wrap">
+  <div class="page-title-row"><div><p class="page-overline">KHÔNG GIAN LÀM VIỆC</p><h1>Quản trị hệ thống</h1><p>Quản lý tài khoản, phân quyền và danh mục sử dụng.</p></div></div>
+  <div th:if="${success}" class="alert good" th:text="${success}"></div>
+  <section class="card" aria-labelledby="admin-users-title">
+    <h3 id="admin-users-title">Quản lý người dùng và phân quyền</h3>
+    <p class="hint">Mỗi tài khoản có một vai trò. Người lập, người phê duyệt và kế toán chi trả phải là những người khác nhau trên cùng hồ sơ.</p>
+    <div class="table-wrap admin-table-wrap">
+      <table class="admin-users-table">
+        <thead><tr><th>Tài khoản</th><th>Họ và tên</th><th>Thư điện tử</th><th>Vai trò, hạn mức và trạng thái</th></tr></thead>
+        <tbody>
+        <tr th:each="u:${users}">
+          <td class="cell-strong" th:text="${u.username}">nguoilap</td>
+          <td th:text="${u.full_name}">Người lập</td>
+          <td th:text="${u.email}">lap@example.test</td>
+          <td>
+            <div th:if="${u.id == me.id}" class="admin-self-summary">
+              <span class="status" th:text="${roleNames[u.role]}">Quản trị viên</span>
+              <span th:text="${'Hạn mức: ' + #numbers.formatDecimal(u.limit_amount,1,'POINT',0,'COMMA') + ' VNĐ'}">Hạn mức</span>
+              <span class="hint">Tài khoản đang sử dụng – không thể tự thay đổi quyền</span>
+            </div>
+            <form th:unless="${u.id == me.id}" class="admin-user-form" method="post" th:action="@{/admin/users/{id}(id=${u.id})}">
+              <label class="admin-field"><span class="sr-only">Vai trò</span>
+                <select name="role" required aria-label="Chọn vai trò">
+                  <option value="USER" th:selected="${u.role == 'USER'}">Nhân viên lập đề nghị</option>
+                  <option value="APPROVER" th:selected="${u.role == 'APPROVER'}">Người phê duyệt</option>
+                  <option value="ACCOUNTANT" th:selected="${u.role == 'ACCOUNTANT'}">Nhân viên kế toán</option>
+                  <option value="ADMIN" th:selected="${u.role == 'ADMIN'}">Quản trị viên</option>
+                  <option value="AUDITOR" th:selected="${u.role == 'AUDITOR'}">Kiểm toán viên</option>
+                </select>
+              </label>
+              <label class="admin-field"><span class="sr-only">Hạn mức (VNĐ)</span>
+                <input name="limitAmount" type="number" min="0" step="0.01" required th:value="${u.limit_amount}" aria-label="Hạn mức (VNĐ)" title="Hạn mức thanh toán (VNĐ)">
+              </label>
+              <label class="admin-active"><input type="checkbox" name="active" value="true" th:checked="${u.active}"> Hoạt động</label>
+              <button class="btn outline" type="submit">Lưu</button>
+            </form>
+          </td>
+        </tr>
+        <tr th:if="${#lists.isEmpty(users)}"><td colspan="4" class="empty-state">Chưa có tài khoản nào.</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+  <div class="cards-2">
+    <section class="card"><h3>Danh mục chi phí</h3><ul><li th:each="c:${cats}" th:text="${c.name}"></li></ul>
+      <form class="inline-form" method="post" th:action="@{/admin/categories}"><input name="name" placeholder="Tên loại chi mới" required><button type="submit" class="btn primary">Thêm</button></form>
+    </section>
+    <section class="card"><h3>Phòng ban</h3><ul><li th:each="d:${deps}" th:text="${d.name}"></li></ul>
+      <form class="inline-form" method="post" th:action="@{/admin/departments}"><input name="name" placeholder="Tên phòng ban mới" required><button type="submit" class="btn primary">Thêm</button></form>
+    </section>
+  </div>
+</div></main>
+<footer class="site-footer">Hệ thống quản lý đề nghị thanh toán và phê duyệt <span>•</span> Dữ liệu lưu tại PostgreSQL <span>•</span> Quy trình quản lý nội bộ</footer>
+</div></body></html>

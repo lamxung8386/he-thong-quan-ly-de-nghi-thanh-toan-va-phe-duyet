@@ -1,0 +1,14 @@
+services:
+  db:
+    image: postgres:16
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: fin01
+      POSTGRES_USER: fin01
+      POSTGRES_PASSWORD: fin01_dev
+    ports:
+      - "5432:5432"
+    volumes:
+      - fin01_pgdata:/var/lib/postgresql/data
+volumes:
+  fin01_pgdata:
