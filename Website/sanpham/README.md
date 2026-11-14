@@ -73,6 +73,5 @@ Tạo một đề nghị bằng web, chạy câu `SELECT` lần nữa để th�
 6. Đổi ảnh đại diện, đăng xuất, đăng nhập lại; ảnh vẫn hiện vì liên kết file lưu trong cơ sở dữ liệu.
 7. Đăng nhập `admin`, kiểm tra quyền và hạn mức; đăng nhập `kiemtoan` xem nhật ký.
 
-Các bài JUnit nằm tại `src/test/java/vn/fin01/` với các tình huống nghiệp vụ và avatar. **Bộ test cần được chạy bằng `mvn clean test` trên máy của bạn; không tuyên bố PASS khi chưa chạy.**
-
+Các bài JUnit nằm tại `src/test/java/vn/fin01/` với các tình huống nghiệp vụ và avatar. 
 
