@@ -4,7 +4,7 @@
 
 ## Cài đặt và chạy trên Windows, VS Code
 
-Yêu cầu JDK 17+, Maven, Docker Desktop/WSL2. Mở Terminal ở thư mục `FIN01_FULL` có `pom.xml` và `docker-compose.yml`.
+Yêu cầu JDK 17+, Maven, Docker Desktop/WSL2. Mở Terminal ở thư mục `sanpham` có `pom.xml` và `docker-compose.yml`.
 
 ```powershell
 # Kiểm tra các công cụ
